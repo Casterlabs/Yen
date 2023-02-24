@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>SQLiteBackedCache</artifactId>
+
+	<parent>
+		<groupId>co.casterlabs</groupId>
+		<artifactId>Implementations</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<repositories>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>co.casterlabs</groupId>
+			<artifactId>Cache</artifactId>
+			<version>${project.parent.version}</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
+		<dependency>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+			<version>3.41.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- https://github.com/Casterlabs/Rakurai/tree/main/Json -->
+		<dependency>
+			<groupId>co.casterlabs.Rakurai</groupId>
+			<artifactId>Json</artifactId>
+			<version>1.17.0</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+</project>

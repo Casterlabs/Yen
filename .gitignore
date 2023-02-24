@@ -12,3 +12,4 @@
 *pom.xml.versionsBackup
 
 # Misc
+Implementations/SQLiteBackedCache/test.db
