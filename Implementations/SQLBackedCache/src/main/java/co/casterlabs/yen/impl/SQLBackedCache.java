@@ -22,6 +22,8 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Clo
     private @Getter String table;
 
     public SQLBackedCache(@NonNull String url, @NonNull String table) throws IOException {
+        this.table = table;
+
         try {
             this.conn = DriverManager.getConnection(url);
         } catch (SQLException e) {
