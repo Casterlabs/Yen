@@ -7,7 +7,7 @@ import co.casterlabs.yen.impl.SQLBackedCache;
 public class Test {
 
     public static void main(String[] args) throws IOException {
-        try (SQLBackedCache<ExampleItem> cache = new SQLBackedCache<>("jdbc:sqlite:test.db", "cache")) {
+        try (SQLBackedCache<ExampleItem> cache = new SQLBackedCache<>(-1, "jdbc:sqlite:test.db", "cache")) {
             cache.submit(new ExampleItem(1));
             cache.submit(new ExampleItem(2));
             cache.submit(new ExampleItem(3));

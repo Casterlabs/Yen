@@ -73,4 +73,9 @@ public abstract class Cache<T extends Cacheable> {
         return result;
     }
 
+    /**
+     * Forcefully evicts expired entries. Has no effect if {@link #limit} is -1.
+     */
+    public abstract void evictExpiredItems();
+
 }

@@ -105,6 +105,7 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
     /**
      * Forcefully evicts expired entries. Has no effect if {@link #limit} is -1.
      */
+    @Override
     public void evictExpiredItems() {
         if (this.expireAfter == -1) return;
 
