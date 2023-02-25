@@ -109,13 +109,11 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
         if (this.expireAfter == -1) return;
 
         synchronized (this.cache) {
-            final long current = System.currentTimeMillis();
+            final long checkBefore = System.currentTimeMillis() - this.expireAfter;
 
             List<String> toRemove = this.cache.values()
                 .parallelStream()
-                .filter(
-                    (ci) -> ci.lastAccess + this.expireAfter < current
-                )
+                .filter((ci) -> ci.lastAccess < checkBefore)
                 .map((ci) -> ci.id)
                 .collect(Collectors.toList());
             toRemove.forEach(this.cache::remove);
