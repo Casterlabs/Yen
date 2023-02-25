@@ -7,7 +7,7 @@ import co.casterlabs.yen.impl.MemoryBackedCache;
 public class Test {
 
     public static void main(String[] args) {
-        MemoryBackedCache<ExampleItem> cache = new MemoryBackedCache<>(4);
+        MemoryBackedCache<ExampleItem> cache = new MemoryBackedCache<>(-1, 4);
 
         cache.submit(new ExampleItem(1));
         cache.submit(new ExampleItem(2));

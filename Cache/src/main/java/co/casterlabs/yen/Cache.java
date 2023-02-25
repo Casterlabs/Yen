@@ -7,9 +7,18 @@ import org.jetbrains.annotations.Nullable;
 import lombok.NonNull;
 
 public abstract class Cache<T extends Cacheable> {
+    /**
+     * A value of -1 means no expiry.
+     */
+    public final long expireAfter;
 
     static {
         Cache.class.getClassLoader().setPackageAssertionStatus("co.casterlabs.yen", true);
+    }
+
+    public Cache(long expireAfter) {
+        assert expireAfter > 0 || expireAfter == -1 : "Expire time must be greater than 0 OR equal to -1 to disable.";
+        this.expireAfter = expireAfter;
     }
 
     /**

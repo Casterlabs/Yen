@@ -21,66 +21,61 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
     public final int limit;
 
     /**
-     * Creates a MemoryBackedCache with no item limit.
-     * 
-     * @see #MemoryBackedCache(int)
-     */
-    public MemoryBackedCache() {
-        this.limit = -1;
-    }
-
-    /**
      * Creates a MemoryBackedCache with the specified item limit. Infrequently
      * accessed items will be evicted from the cache first. Use the other
      * constructor to create a cache with no item limit.
      * 
-     * @param  limit          the maxmium amount of items to store before evicting
-     *                        old entries.
+     * @param    expireAfter    the time after insertion to mark an entry as
+     *                          "expired."
+     * @param    limit          the maxmium amount of items to store before evicting
+     *                          old entries. -1 to disable.
      * 
-     * @throws AssertionError if limit is less than or equal to zero.
+     * @implNote                Expired items may not be evicted until they are
+     *                          retrieved or until an item is inserted. You can use
+     *                          {@link #evictExpiredItems()} to trigger eviction
+     *                          manually.
      * 
-     * @see                   #MemoryBackedCache()
+     * @throws   AssertionError if limit is less than or equal to zero AND is not
+     *                          -1.
      */
-    public MemoryBackedCache(int limit) {
-        assert limit > 0 : "Limit must be greater than 0.";
+    public MemoryBackedCache(long expireAfter, int limit) {
+        super(expireAfter);
         this.limit = limit;
+        assert expireAfter > 0 || expireAfter == -1 : "Expire time must be greater than 0 OR equal to -1 to disable.";
+        assert limit > 0 || limit == -1 : "Limit must be greater than 0 OR equal to -1 to disable.";
     }
 
     @Override
     public void submit(@NonNull T instance) {
-        if (this.limit == -1) {
-            this.cache.put(
-                instance.id(),
-                new CacheItem(instance, -1) // No timestamp.
-            );
-            return;
-        }
+        this.evictExpiredItems();
 
         synchronized (this.cache) {
-            if (this.cache.size() >= this.limit) {
-                Optional<Map.Entry<String, CacheItem>> toRemove = this.cache.entrySet()
+            if ((this.limit != -1) &&
+                (this.cache.size() >= this.limit)) {
+                Optional<CacheItem> toRemove = this.cache.values()
                     .parallelStream()
                     .sorted((ci1, ci2) -> {
-                        return Long.compare(ci1.getValue().lastAccess, ci2.getValue().lastAccess);
+                        return Long.compare(ci1.lastAccess, ci2.lastAccess);
                     })
                     .findFirst();
-                this.cache.remove(toRemove.get().getKey());
+                this.cache.remove(toRemove.get().id);
             }
 
-            this.cache.put(
-                instance.id(),
-                new CacheItem(instance, System.currentTimeMillis())
-            );
+            String id = instance.id();
+            this.cache.put(id, new CacheItem(id, instance, System.currentTimeMillis()));
         }
     }
 
     @Override
     public boolean has(@NonNull String id) {
+        this.evictExpiredItems();
         return this.cache.containsKey(id);
     }
 
     @Override
     public synchronized @Nullable T get(@NonNull String id) {
+        this.evictExpiredItems();
+
         CacheItem item = this.cache.get(id);
 
         // If we have an item and we have a limit, update the lastAccess time.
@@ -97,6 +92,8 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
      * @return all of the items currently in the cache.
      */
     public List<T> dumpCache() {
+        this.evictExpiredItems();
+
         synchronized (this.cache) {
             return this.cache.values()
                 .parallelStream()
@@ -105,14 +102,37 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
         }
     }
 
+    /**
+     * Forcefully evicts expired entries. Has no effect if {@link #limit} is -1.
+     */
+    public void evictExpiredItems() {
+        if (this.expireAfter == -1) return;
+
+        synchronized (this.cache) {
+            final long current = System.currentTimeMillis();
+
+            List<String> toRemove = this.cache.values()
+                .parallelStream()
+                .filter(
+                    (ci) -> ci.lastAccess + this.expireAfter < current
+                )
+                .map((ci) -> ci.id)
+                .collect(Collectors.toList());
+            toRemove.forEach(this.cache::remove);
+        }
+    }
+
     private class CacheItem {
+        private final String id;
         private final T instance;
         private long lastAccess;
 
-        private CacheItem(T instance, long time) {
+        private CacheItem(String id, T instance, long time) {
+            this.id = id;
             this.instance = instance;
             this.lastAccess = time;
         }
+
     }
 
 }
