@@ -16,10 +16,10 @@ import co.casterlabs.yen.Cacheable;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 
-public class SQLiteBackedCache<T extends Cacheable> extends Cache<T> implements Closeable {
+public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Closeable {
     private Connection conn;
 
-    public SQLiteBackedCache(String url) throws IOException {
+    public SQLBackedCache(String url) throws IOException {
         try {
             this.conn = DriverManager.getConnection(url);
 
@@ -38,7 +38,15 @@ public class SQLiteBackedCache<T extends Cacheable> extends Cache<T> implements 
         String className = instanceObject.getClass().getCanonicalName();
         String instance = Rson.DEFAULT.toJson(instanceObject).toString(false);
 
-        try (PreparedStatement statement = this.conn.prepareStatement("INSERT OR REPLACE INTO cache (id, className, instance) VALUES(?, ?, ?)")) {
+        // Remove all entries with that ID.
+        // Not all SQL servers support "INSERT OR REPLACE"
+        try (PreparedStatement statement = this.conn.prepareStatement("DELETE FROM cache WHERE id = ?")) {
+            statement.setString(1, id);
+            statement.executeUpdate();
+        }
+
+        // Insert the entry.
+        try (PreparedStatement statement = this.conn.prepareStatement("INSERT INTO cache (id, className, instance) VALUES(?, ?, ?)")) {
             statement.setString(1, id);
             statement.setString(2, className);
             statement.setString(3, instance);
@@ -49,7 +57,7 @@ public class SQLiteBackedCache<T extends Cacheable> extends Cache<T> implements 
     @SneakyThrows
     @Override
     public boolean has(@NonNull String id) {
-        try (PreparedStatement statement = this.conn.prepareStatement("SELECT id FROM cache WHERE id EQUALS ?")) {
+        try (PreparedStatement statement = this.conn.prepareStatement("SELECT id FROM cache WHERE id = ?")) {
             statement.setString(1, id);
 
             ResultSet result = statement.executeQuery();
@@ -61,7 +69,7 @@ public class SQLiteBackedCache<T extends Cacheable> extends Cache<T> implements 
     @SneakyThrows
     @Override
     public @Nullable T get(@NonNull String id) {
-        try (PreparedStatement statement = this.conn.prepareStatement("SELECT className, instance FROM cache WHERE id EQUALS ?")) {
+        try (PreparedStatement statement = this.conn.prepareStatement("SELECT className, instance FROM cache WHERE id = ?")) {
             statement.setString(1, id);
 
             ResultSet result = statement.executeQuery();

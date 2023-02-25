@@ -4,9 +4,11 @@ import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.yen.Cacheable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @ToString
+@NoArgsConstructor
 @AllArgsConstructor
 @JsonClass(exposeAll = true)
 public class ExampleItem implements Cacheable {
