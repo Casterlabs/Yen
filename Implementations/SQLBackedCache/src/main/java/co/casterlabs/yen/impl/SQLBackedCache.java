@@ -13,20 +13,27 @@ import org.jetbrains.annotations.Nullable;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.yen.Cache;
 import co.casterlabs.yen.Cacheable;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 
 public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Closeable {
     private Connection conn;
+    private @Getter String table;
 
-    public SQLBackedCache(String url) throws IOException {
+    public SQLBackedCache(@NonNull String url, @NonNull String table) throws IOException {
         try {
             this.conn = DriverManager.getConnection(url);
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
 
+        try {
             this.conn
                 .createStatement()
-                .execute("CREATE TABLE IF NOT EXISTS cache (id text PRIMARY KEY, className text NOT NULL, instance text NOT NULL)");
+                .execute("CREATE TABLE IF NOT EXISTS " + this.table + " (id text PRIMARY KEY, className text NOT NULL, instance text NOT NULL)");
         } catch (SQLException e) {
+            this.close(); // Prevent the connection from being leaked.
             throw new IOException(e);
         }
     }
@@ -40,13 +47,13 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Clo
 
         // Remove all entries with that ID.
         // Not all SQL servers support "INSERT OR REPLACE"
-        try (PreparedStatement statement = this.conn.prepareStatement("DELETE FROM cache WHERE id = ?")) {
+        try (PreparedStatement statement = this.conn.prepareStatement("DELETE FROM " + this.table + " WHERE id = ?")) {
             statement.setString(1, id);
             statement.executeUpdate();
         }
 
         // Insert the entry.
-        try (PreparedStatement statement = this.conn.prepareStatement("INSERT INTO cache (id, className, instance) VALUES(?, ?, ?)")) {
+        try (PreparedStatement statement = this.conn.prepareStatement("INSERT INTO " + this.table + " (id, className, instance) VALUES(?, ?, ?)")) {
             statement.setString(1, id);
             statement.setString(2, className);
             statement.setString(3, instance);
@@ -57,7 +64,7 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Clo
     @SneakyThrows
     @Override
     public boolean has(@NonNull String id) {
-        try (PreparedStatement statement = this.conn.prepareStatement("SELECT id FROM cache WHERE id = ?")) {
+        try (PreparedStatement statement = this.conn.prepareStatement("SELECT id FROM " + this.table + " WHERE id = ?")) {
             statement.setString(1, id);
 
             ResultSet result = statement.executeQuery();
@@ -69,7 +76,7 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Clo
     @SneakyThrows
     @Override
     public @Nullable T get(@NonNull String id) {
-        try (PreparedStatement statement = this.conn.prepareStatement("SELECT className, instance FROM cache WHERE id = ?")) {
+        try (PreparedStatement statement = this.conn.prepareStatement("SELECT className, instance FROM " + this.table + " WHERE id = ?")) {
             statement.setString(1, id);
 
             ResultSet result = statement.executeQuery();
