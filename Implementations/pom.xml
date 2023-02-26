@@ -5,7 +5,7 @@
 
 	<modules>
 		<module>MemoryBackedCache</module>
-		<module>SQLiteBackedCache</module>
+		<module>SQLBackedCache</module>
 	</modules>
 
 	<parent>
