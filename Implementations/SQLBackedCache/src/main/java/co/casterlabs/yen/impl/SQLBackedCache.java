@@ -1,9 +1,7 @@
 package co.casterlabs.yen.impl;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,26 +16,20 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 
-public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Closeable {
+public class SQLBackedCache<T extends Cacheable> extends Cache<T> {
     private Connection conn;
     private @Getter String table;
 
-    public SQLBackedCache(long expireAfter, @NonNull String url, @NonNull String table) throws IOException {
+    public SQLBackedCache(long expireAfter, @NonNull Connection conn, @NonNull String table) throws IOException {
         super(expireAfter);
         this.table = table;
-
-        try {
-            this.conn = DriverManager.getConnection(url);
-        } catch (SQLException e) {
-            throw new IOException(e);
-        }
+        this.conn = conn;
 
         try {
             this.conn
                 .createStatement()
                 .execute("CREATE TABLE IF NOT EXISTS " + this.table + " (id text PRIMARY KEY, className text NOT NULL, instance text NOT NULL, lastAccess bigint)");
         } catch (SQLException e) {
-            this.close(); // Prevent the connection from being leaked.
             throw new IOException(e);
         }
     }
@@ -166,15 +158,6 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Clo
         try (PreparedStatement statement = this.conn.prepareStatement("DELETE FROM " + this.table + " WHERE lastAccess < ?")) {
             statement.setLong(1, checkBefore);
             statement.executeUpdate();
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        try {
-            this.conn.close();
-        } catch (SQLException e) {
-            throw new IOException(e);
         }
     }
 
