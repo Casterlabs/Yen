@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.yen.Cache;
+import co.casterlabs.yen.CacheIterator;
 import co.casterlabs.yen.Cacheable;
 import lombok.Getter;
 import lombok.NonNull;
@@ -78,6 +79,50 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> implements Clo
             ResultSet result = statement.executeQuery();
             return result.next();
         }
+    }
+
+    @SneakyThrows
+    @Override
+    public CacheIterator<T> enumerate() {
+        this.evictExpiredItems();
+
+        PreparedStatement statement = this.conn.prepareStatement("SELECT id, className, instance FROM " + this.table + "");
+        ResultSet result = statement.executeQuery();
+
+        return new CacheIterator<T>() {
+
+            @SneakyThrows
+            @Override
+            public boolean hasNext() {
+                return result.next();
+            }
+
+            @SuppressWarnings("unchecked")
+            @SneakyThrows
+            @Override
+            public T next() {
+                String id = result.getString(1);
+                String className = result.getString(2);
+                String instance = result.getString(3);
+
+                // Update the lastAccess time for this entry.
+                try (PreparedStatement updateStatement = conn.prepareStatement("UPDATE " + table + " SET lastAccess = ? WHERE id = ?")) {
+                    updateStatement.setLong(1, System.currentTimeMillis());
+                    updateStatement.setString(2, id);
+                    updateStatement.executeUpdate();
+                }
+
+                Class<?> clazz = Class.forName(className);
+
+                return (T) Rson.DEFAULT.fromJson(instance, clazz);
+            }
+
+            @Override
+            public void close() throws Exception {
+                statement.close();
+            }
+
+        };
     }
 
     @SuppressWarnings("unchecked")

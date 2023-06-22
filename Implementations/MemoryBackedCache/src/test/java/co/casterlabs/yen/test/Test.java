@@ -1,12 +1,10 @@
 package co.casterlabs.yen.test;
 
-import java.util.List;
-
 import co.casterlabs.yen.impl.MemoryBackedCache;
 
 public class Test {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         MemoryBackedCache<ExampleItem> cache = new MemoryBackedCache<>(-1, 4);
 
         cache.submit(new ExampleItem(1));
@@ -15,9 +13,8 @@ public class Test {
         cache.submit(new ExampleItem(4));
         cache.submit(new ExampleItem(5));
 
-        List<ExampleItem> contents = cache.dumpCache();
         System.out.println("Cache should not contain item 1, as the cache has a limit of 4 items and we've added 5.");
-        System.out.printf("Cache contents: %s\n", contents);
+        System.out.printf("Cache contents: %s\n", cache.enumerate().toList());
     }
 
 }

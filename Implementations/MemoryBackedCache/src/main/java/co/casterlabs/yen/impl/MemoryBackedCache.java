@@ -1,6 +1,7 @@
 package co.casterlabs.yen.impl;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.yen.Cache;
+import co.casterlabs.yen.CacheIterator;
 import co.casterlabs.yen.Cacheable;
 import lombok.NonNull;
 
@@ -73,6 +75,35 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
     }
 
     @Override
+    public CacheIterator<T> enumerate() {
+        this.evictExpiredItems();
+        Iterator<MemoryBackedCache<T>.CacheItem> nativeIt = this.cache.values().iterator();
+        return new CacheIterator<T>() {
+
+            @Override
+            public boolean hasNext() {
+                return nativeIt.hasNext();
+            }
+
+            @Override
+            public T next() {
+                CacheItem item = nativeIt.next();
+
+                // If we have an item and we have a limit, update the lastAccess time.
+                if ((item != null) && (limit != -1)) {
+                    item.lastAccess = System.currentTimeMillis();
+                }
+
+                return item.instance;
+            }
+
+            @Override
+            public void close() throws Exception {} // NOOP
+
+        };
+    }
+
+    @Override
     public synchronized @Nullable T get(@NonNull String id) {
         this.evictExpiredItems();
 
@@ -84,22 +115,6 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
         }
 
         return item.instance;
-    }
-
-    /**
-     * Dumps the entire cache into a list and returns it.
-     * 
-     * @return all of the items currently in the cache.
-     */
-    public List<T> dumpCache() {
-        this.evictExpiredItems();
-
-        synchronized (this.cache) {
-            return this.cache.values()
-                .parallelStream()
-                .map((ci) -> ci.instance)
-                .collect(Collectors.toList());
-        }
     }
 
     /**

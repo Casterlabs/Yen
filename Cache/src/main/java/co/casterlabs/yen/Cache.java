@@ -39,6 +39,15 @@ public abstract class Cache<T extends Cacheable> {
     public abstract boolean has(@NonNull String id);
 
     /**
+     * Retrieves an iterator for all contained items.
+     * 
+     * You must close the returned iterator.
+     * 
+     * @return an iterator.
+     */
+    public abstract CacheIterator<T> enumerate();
+
+    /**
      * Retrieves an instance with the given ID.
      * 
      * @param  id the ID of the object to retrieve.
