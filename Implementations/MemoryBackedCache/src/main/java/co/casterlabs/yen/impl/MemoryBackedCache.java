@@ -117,6 +117,11 @@ public class MemoryBackedCache<T extends Cacheable> extends Cache<T> {
         return item.instance;
     }
 
+    @Override
+    public void remove(@NonNull String id) {
+        this.cache.remove(id);
+    }
+
     /**
      * Forcefully evicts expired entries. Has no effect if {@link #limit} is -1.
      */

@@ -146,6 +146,15 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> {
         }
     }
 
+    @SneakyThrows
+    @Override
+    public void remove(@NonNull String id) {
+        try (PreparedStatement statement = this.conn.prepareStatement("DELETE FROM " + this.table + " WHERE id = ?")) {
+            statement.setString(1, id);
+            statement.executeUpdate();
+        }
+    }
+
     /**
      * Forcefully evicts expired entries. Has no effect if {@link #limit} is -1.
      */

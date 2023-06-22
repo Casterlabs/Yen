@@ -83,6 +83,13 @@ public abstract class Cache<T extends Cacheable> {
     }
 
     /**
+     * Removes the instance with the given ID.
+     * 
+     * @param id the ID of the object to remove.
+     */
+    public abstract void remove(@NonNull String id);
+
+    /**
      * Forcefully evicts expired entries. Has no effect if {@link #limit} is -1.
      */
     public abstract void evictExpiredItems();
