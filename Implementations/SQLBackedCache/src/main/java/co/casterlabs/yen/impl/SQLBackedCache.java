@@ -36,7 +36,7 @@ public class SQLBackedCache<T extends Cacheable> extends Cache<T> {
 
     @SneakyThrows
     @Override
-    public void submit(@NonNull T instanceObject) {
+    public synchronized void submit(@NonNull T instanceObject) {
         this.evictExpiredItems();
 
         String id = instanceObject.id();
