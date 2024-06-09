@@ -11,6 +11,10 @@
 
 	<repositories>
 		<repository>
+			<id>casterlabs-maven</id>
+			<url>https://repo.casterlabs.co/maven</url>
+		</repository>
+		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
@@ -24,9 +28,9 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>co.casterlabs.Rakurai</groupId>
-			<artifactId>Json</artifactId>
-			<version>1.17.5</version>
+			<groupId>co.casterlabs</groupId>
+			<artifactId>rson</artifactId>
+			<version>1.18.0</version>
 			<scope>compile</scope>
 		</dependency>
 
